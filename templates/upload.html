@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card">
+  <h2>Upload Firmware</h2>
+  {% if success %}
+    <div class="alert success">Upload accepted. Processing queue.</div>
+  {% endif %}
+  <form method="post" enctype="multipart/form-data">
+    <label>Choose file
+      <input type="file" name="firmware">
+    </label>
+    <div class="actions">
+      <button class="btn primary" type="submit">Upload</button>
+    </div>
+  </form>
+  <p class="muted">Supports .bin, .fw — Max 50MB</p>
+</div>
+{% endblock %}

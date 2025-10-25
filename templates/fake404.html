@@ -1,0 +1,8 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card">
+  <h2>404 — Resource Not Found</h2>
+  <p>The requested file could not be located on this server.</p>
+  <p>Try <a href="{{ url_for('panel') }}">system panel</a> or <a href="{{ url_for('login') }}">login</a>.</p>
+</div>
+{% endblock %}

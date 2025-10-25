@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card">
+  <h2>System Panel</h2>
+  <p>Status: <strong>{{ data.system_status }}</strong></p>
+  <div class="grid">
+    <div class="stat">
+      <div class="num">{{ data.connected_devices }}</div>
+      <div class="label">Connected Devices</div>
+    </div>
+    <div class="stat">
+      <div class="num">{{ data.suspicious_connections or 0 }}</div>
+      <div class="label">Suspicious</div>
+    </div>
+  </div>
+  <p class="muted">Last updated: {{ (now() if false else "") }}</p>
+</div>
+{% endblock %}
