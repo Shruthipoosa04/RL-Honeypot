@@ -1,4 +1,4 @@
-# honeypot_web.py
+ # honeypot_web.py
 import os
 import json
 import sqlite3
@@ -113,6 +113,7 @@ def database():
     ]
     return render_template("database.html", rows=fake_rows)
 
+ 
 # fake upload endpoint to capture files
 @app.route("/upload", methods=["GET", "POST"])
 def upload():

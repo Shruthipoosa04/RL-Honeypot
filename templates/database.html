@@ -1,0 +1,224 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<!-- Page Banner -->
+<div class="nav">Database Management – Demo v4.9.2</div>
+<div class="container">
+
+  <!-- Users Table -->
+  <h2>Users Table</h2>
+  <div class="table-box" id="usersTableBox">
+    <strong>users</strong> (<span id="usersCount">0</span> rows)
+    <table id="usersTable">
+      <thead>
+        <tr>
+          <th>id</th>
+          <th>username</th>
+          <th>email</th>
+          <th>password_hash</th>
+          <th>last_login</th>
+          <th>role</th>
+          <th>mfa</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div class="pagination">
+      <button onclick="prevPage()">Prev</button>
+      <button onclick="nextPage()">Next</button>
+    </div>
+  </div>
+
+  <!-- API Keys Table -->
+  <h2>API Keys Table</h2>
+  <div class="table-box">
+    <strong>api_keys</strong> (<span id="apiKeysCount">0</span> rows)
+    <table id="apiKeysTable">
+      <thead>
+        <tr>
+          <th>id</th>
+          <th>service</th>
+          <th>key</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- SQL Console -->
+  <h2>💻 SQL Console</h2>
+  <textarea id="sqlBox" placeholder="SELECT * FROM users WHERE username='admin';"></textarea><br>
+  <button id="runSQL">Run Query</button>
+  <button id="downloadBackup">Download Backup</button>
+  <button id="showHeatmap">Show IP Heatmap</button>
+
+  <div id="loader" class="loader" style="display:none;">Processing query...</div>
+  <div id="result" class="result-box">No queries executed yet.</div>
+  <div id="heatmap" style="display:none;"></div>
+
+</div>
+
+<!-- CSS -->
+<style>
+:root {
+  --bg:#070b14; --surface:rgba(255,255,255,0.03); --card:rgba(255,255,255,0.05);
+  --border:rgba(255,255,255,0.08); --muted:#9ca3af; --accent:#00d4ff;
+  --accent-2:#7c3aed; --text:#e6eef6; --success:#16f2b3; --danger:#ff4b5c; 
+  --shadow:0 10px 30px rgba(0,0,0,0.6);
+}
+body {margin:0;background:linear-gradient(180deg,#050912,#0b1220);color:var(--text);font-family:'Inter',sans-serif;}
+.nav {background:var(--surface);border-bottom:1px solid var(--border);padding:16px 24px;font-size:1.1rem;color:var(--accent);letter-spacing:0.5px;backdrop-filter: blur(10px);position:sticky;top:60px;z-index:50;}
+.container {max-width:980px;margin:40px auto;padding:0 20px;}
+.table-box, .result-box {background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:24px;box-shadow:var(--shadow);backdrop-filter:blur(12px);transition:0.2s ease;}
+.table-box:hover, .result-box:hover {transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,212,255,0.15);}
+table {width:100%;border-collapse:collapse;margin-top:12px;}
+th, td {padding:10px 14px;border-bottom:1px solid var(--border);font-size:14px;}
+th {color:var(--accent);text-transform:uppercase;font-size:12px;letter-spacing:0.7px;}
+tr:hover {background: rgba(255,255,255,0.03);}
+.pagination button {background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 14px;margin-right:6px;border-radius:8px;cursor:pointer;transition:0.2s ease;}
+.pagination button:hover {border-color: var(--accent); color: var(--accent);}
+#sqlBox {width:100%;height:130px;padding:12px;border-radius:12px;border:1px solid var(--border);background: rgba(255,255,255,0.02);color: var(--accent);font-size:14px;resize:vertical;box-shadow: inset 0 0 12px rgba(0,0,0,0.35);backdrop-filter: blur(6px);}
+#sqlBox:focus {outline:none; border-color: var(--accent); box-shadow:0 0 10px rgba(0,212,255,0.4);}
+button {font-family:'Inter';border:none;}
+#runSQL, #downloadBackup, #showHeatmap {padding:10px 22px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;margin-right:8px;transition:0.25s ease;color:#031023;background:linear-gradient(90deg,var(--accent),var(--accent-2));box-shadow:0 4px 12px rgba(0,212,255,0.25);border:none;}
+#runSQL:hover, #downloadBackup:hover, #showHeatmap:hover {transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,212,255,0.35);}
+.loader {margin-top:10px;font-size:14px;color:var(--accent);}
+.result-box {color:var(--text);white-space: pre-wrap;}
+#heatmap {background: rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; margin-top:20px; height:320px; position:relative; box-shadow:var(--shadow);}
+#heatmap div {background: var(--danger); width:10px; height:10px; border-radius:50%; position:absolute;}
+h2 {color:var(--accent); margin-bottom:12px; font-size:1.3rem;}
+strong {color:var(--accent);}
+</style>
+
+<!-- JS -->
+<script>
+// Demo data
+const users = [
+  {id:1,username:'admin',email:'admin@example.com',password_hash:'****',last_login:'2025-12-06 09:45',role:'admin',mfa:1},
+  {id:2,username:'alice',email:'alice@example.com',password_hash:'****',last_login:'2025-12-05 17:32',role:'user',mfa:0},
+  {id:3,username:'bob',email:'bob@example.com',password_hash:'****',last_login:'2025-12-04 12:15',role:'user',mfa:0},
+  {id:4,username:'eve',email:'eve@example.com',password_hash:'****',last_login:'2025-12-03 22:00',role:'moderator',mfa:1},
+  {id:5,username:'charlie',email:'charlie@example.com',password_hash:'****',last_login:'2025-12-02 10:20',role:'user',mfa:0},
+  {id:6,username:'dave',email:'dave@example.com',password_hash:'****',last_login:'2025-12-01 08:50',role:'moderator',mfa:1}
+];
+
+const api_keys = [
+  {id:1,service:'github',key:'ghp_demo1234567890'},
+  {id:2,service:'aws',key:'AKIADEMO1234567890'},
+  {id:3,service:'twilio',key:'ACDEMO0987654321'},
+  {id:4,service:'sendgrid',key:'SG.demoAPIkey12345'},
+  {id:5,service:'stripe',key:'sk_test_demo9876543210'}
+];
+
+// Pagination for users table
+let currentPage = 1;
+const rowsPerPage = 3;
+
+function renderUsersPage(page){
+  const tbody = document.querySelector("#usersTable tbody");
+  tbody.innerHTML = "";
+  const start = (page-1)*rowsPerPage;
+  const end = start+rowsPerPage;
+  const pageRows = users.slice(start,end);
+  pageRows.forEach(u=>{
+    tbody.innerHTML += `<tr>
+      <td>${u.id}</td><td>${u.username}</td><td>${u.email}</td><td>${u.password_hash}</td>
+      <td>${u.last_login}</td><td>${u.role}</td><td>${u.mfa}</td>
+    </tr>`;
+  });
+  document.getElementById("usersCount").textContent = users.length;
+}
+
+function nextPage(){ if(currentPage*rowsPerPage<users.length){ currentPage++; renderUsersPage(currentPage); } }
+function prevPage(){ if(currentPage>1){ currentPage--; renderUsersPage(currentPage); } }
+
+renderUsersPage(currentPage);
+
+// Render API keys
+const apiTbody = document.querySelector("#apiKeysTable tbody");
+api_keys.forEach(k=>{
+  apiTbody.innerHTML += `<tr>
+    <td>${k.id}</td><td>${k.service}</td><td>${k.key}</td>
+  </tr>`;
+});
+document.getElementById("apiKeysCount").textContent = api_keys.length;
+
+// SQL simulation
+function renderTable(data){
+  if(!data || data.length===0) return "<i>No results</i>";
+  let headers = Object.keys(data[0]);
+  let html = "<table style='width:100%;border-collapse:collapse;margin-top:12px;'>";
+  html += "<thead><tr>";
+  headers.forEach(h=>html += `<th style='border:1px solid #ccc;padding:6px 10px;'>${h}</th>`);
+  html += "</tr></thead><tbody>";
+  data.forEach(row=>{
+    html += "<tr>";
+    headers.forEach(h=>html += `<td style='border:1px solid #ccc;padding:6px 10px;'>${row[h]}</td>`);
+    html += "</tr>";
+  });
+  html += "</tbody></table>";
+  return html;
+}
+
+document.getElementById("runSQL").addEventListener("click", ()=>{
+  const query = document.getElementById("sqlBox").value.toLowerCase();
+  const loader = document.getElementById("loader");
+  const resultBox = document.getElementById("result");
+  loader.style.display="inline";
+  resultBox.innerHTML="";
+  setTimeout(()=>{
+    loader.style.display="none";
+    let res=[];
+    if(query.includes("from users")){
+      res = users;
+      if(query.includes("where username='admin'")) res = users.filter(u=>u.username==='admin');
+    } else if(query.includes("from api_keys")){
+      res = api_keys;
+    } else {
+      resultBox.innerHTML = "<i>Query not recognized in demo mode.</i>";
+      return;
+    }
+    resultBox.innerHTML = renderTable(res);
+  },200);
+});
+
+// Heatmap simulation
+document.getElementById("showHeatmap").addEventListener("click", ()=>{
+  const heatmapDiv = document.getElementById("heatmap");
+  if(heatmapDiv.style.display==="block"){
+    heatmapDiv.style.display="none";
+    heatmapDiv.innerHTML="";
+  } else {
+    heatmapDiv.style.display="block";
+    for(let i=0;i<20;i++){
+      const dot = document.createElement("div");
+      dot.style.position="absolute";
+      dot.style.width="10px"; dot.style.height="10px";
+      dot.style.background="#ff4b5c"; dot.style.borderRadius="50%";
+      dot.style.left=Math.random()*100+"%"; dot.style.top=Math.random()*100+"%";
+      heatmapDiv.appendChild(dot);
+    }
+  }
+});
+
+// Download CSV
+document.getElementById("downloadBackup").addEventListener("click", ()=>{
+  const combined={users, api_keys};
+  let csv="";
+  for(const [tableName, tableData] of Object.entries(combined)){
+    if(tableData.length===0) continue;
+    csv+=tableName+"\n";
+    csv+=Object.keys(tableData[0]).join(",")+"\n";
+    tableData.forEach(row=>{
+      csv+=Object.values(row).join(",")+"\n";
+    });
+    csv+="\n";
+  }
+  const blob = new Blob([csv],{type:"text/csv"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href=url; a.download="demo_backup.csv"; document.body.appendChild(a); a.click(); a.remove();
+});
+</script>
+
+{% endblock %}

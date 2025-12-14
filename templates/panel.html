@@ -1,18 +1,239 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="card">
-  <h2>System Panel</h2>
-  <p>Status: <strong>{{ data.system_status }}</strong></p>
-  <div class="grid">
-    <div class="stat">
-      <div class="num">{{ data.connected_devices }}</div>
-      <div class="label">Connected Devices</div>
+
+<div class="nav">Enterprise Security Operations Center (SOC) – v4.2.11</div>
+<div class="container">
+
+  <!-- DASHBOARD TOP CARDS -->
+  <div class="cards-grid">
+
+    <div class="card" title="Overall system operational state.">
+      <h3>System Status</h3>
+      <p id="systemStatus">Operational</p>
     </div>
-    <div class="stat">
-      <div class="num">{{ data.suspicious_connections or 0 }}</div>
-      <div class="label">Suspicious</div>
+
+    <div class="card" title="Active authenticated sessions.">
+      <h3>Active Sessions</h3>
+      <p id="activeSessions">8</p>
+    </div>
+
+    <div class="card" title="Devices connected to network.">
+      <h3>Connected Devices</h3>
+      <p id="connectedDevices">12</p>
+    </div>
+
+    <div class="card" title="Suspicious activities detected.">
+      <h3>Suspicious Events</h3>
+      <p id="suspiciousConnections">3</p>
+    </div>
+
+  </div>
+
+  <!-- SYSTEM PERFORMANCE GRAPHS -->
+  <div class="graph-section">
+    <h2 class="graph-title">System Performance</h2>
+    <div class="chart-wrapper">
+      <canvas id="cpuChart"></canvas>
+    </div>
+    <div class="chart-wrapper">
+      <canvas id="networkChart"></canvas>
+    </div>
+    <div class="chart-wrapper">
+      <canvas id="sessionChart"></canvas>
     </div>
   </div>
-  <p class="muted">Last updated: {{ (now() if false else "") }}</p>
+
+  <!-- COLLAPSIBLES -->
+  <div class="collapsible">
+    <button class="collapsible-btn">Configuration</button>
+    <div class="collapsible-content">
+      <p>System firmware version: 3.9.21</p>
+      <p>Auto‑patch: ENABLED</p>
+      <p>Access control level: HIGH</p>
+      <button onclick="fakeAction('Save Config Changes')">Save Changes</button>
+    </div>
+  </div>
+
+  <div class="collapsible">
+    <button class="collapsible-btn">Security Alerts</button>
+    <div class="collapsible-content">
+      <div class="table-box">
+        <table>
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Alert</th>
+              <th>Source IP</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>2025-12-06 09:40</td><td>Failed Login</td><td>192.168.1.22</td><td>Investigating</td></tr>
+            <tr><td>2025-12-06 09:41</td><td>Port Scan Detected</td><td>10.0.0.8</td><td>Resolved</td></tr>
+            <tr><td>2025-12-06 09:42</td><td>Suspicious Upload</td><td>172.16.0.12</td><td>Investigating</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="collapsible">
+    <button class="collapsible-btn">System Logs</button>
+    <div class="collapsible-content">
+      <div class="log-box" id="logBox"></div>
+      <button onclick="fakeAction('Export Logs')">Export Logs</button>
+    </div>
+  </div>
+
+  <!-- QUICK ACTIONS -->
+  <h2 class="graph-title">Quick Actions</h2>
+  <div class="actions">
+    <button onclick="fakeAction('Restart Service')">Restart Service</button>
+    <button onclick="fakeAction('Block IP')">Block IP</button>
+    <button onclick="fakeAction('Initialize Network Scan')">Scan Network</button>
+    <button onclick="fakeAction('Open Audit Console')">Audit Console</button>
+    <button onclick="fakeAction('Purge Temp Files')">Purge Temp</button>
+  </div>
+
 </div>
+
+<style>
+/* GRID CARDS */
+.cards-grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
+  gap:20px;
+  margin-bottom:35px;
+}
+.card {
+  background: linear-gradient(135deg, rgba(0,212,255,0.12), rgba(124,58,237,0.05));
+  padding:20px;
+  border-radius:14px;
+  text-align:center;
+  color:#00d4ff;
+  box-shadow:0 6px 20px rgba(0,212,255,0.15);
+  transition:0.3s ease;
+  backdrop-filter: blur(6px);
+}
+.card:hover { transform:translateY(-3px); box-shadow:0 8px 26px rgba(0,212,255,0.25); }
+.card h3 { font-size:1.15rem; margin-bottom:8px; color:#7c3aed; font-weight:600; }
+.card p { font-size:1.7rem; font-weight:700; }
+
+/* GRAPHS */
+.graph-section { margin-bottom:30px; }
+.graph-title { font-size:1.55rem; margin-bottom:12px; color:#38bdf8; font-weight:600; }
+.chart-wrapper { background:#111827; padding:15px; border-radius:12px; margin-bottom:25px; }
+canvas { width:100% !important; height:200px !important; }
+
+/* COLLAPSIBLES */
+.collapsible { margin-bottom:20px; }
+.collapsible-btn {
+  width:100%;
+  text-align:left;
+  padding:12px 18px;
+  background:#111827;
+  border:1px solid #1f2937;
+  border-radius:8px;
+  font-size:17px;
+  color:#00d4ff;
+  cursor:pointer;
+  transition:0.2s ease;
+}
+.collapsible-btn:hover { background:#1f2937; }
+.collapsible-content {
+  display:none;
+  padding:18px;
+  background:#0d1117;
+  border-left:3px solid #7c3aed;
+  margin-top:5px;
+  border-radius:8px;
+}
+
+/* TABLES */
+.table-box table { width:100%; border-collapse:collapse; }
+.table-box th, .table-box td { padding:10px; border-bottom:1px solid rgba(255,255,255,0.08); }
+.table-box th { color:#00d4ff; font-weight:600; }
+
+/* ACTION BUTTONS */
+.actions button {
+  margin:6px 10px 6px 0;
+  padding:10px 20px;
+  border:none;
+  border-radius:10px;
+  font-weight:600;
+  color:#031023;
+  background:linear-gradient(90deg,#00d4ff,#7c3aed);
+  cursor:pointer;
+  transition:0.2s ease;
+}
+.actions button:hover {
+  transform:translateY(-2px);
+  box-shadow:0 5px 15px rgba(0,212,255,0.35);
+}
+
+/* LOG BOX */
+.log-box {
+  background:#00000055;
+  padding:12px;
+  height:160px;
+  overflow-y:auto;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,0.08);
+  font-family:monospace;
+  font-size:13px;
+  color:#b4c2d0;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// COLLAPSIBLES
+document.querySelectorAll(".collapsible-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const content = btn.nextElementSibling;
+    content.style.display = content.style.display === "block" ? "none" : "block";
+  });
+});
+
+// FAKE ACTION LOGGER
+function fakeAction(action) {
+  fetch("/trap/log", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ action, time: new Date().toISOString() })
+  });
+  document.getElementById("logBox").innerHTML += `[${new Date().toLocaleTimeString()}] ${action} executed<br>`;
+}
+
+// CHARTS
+function randomData() { return Math.floor(Math.random()*50)+20; }
+const labels = Array.from({length:7},(_,i)=>`${i}0s`);
+
+function createLineChart(id,label,color1,color2){
+  return new Chart(document.getElementById(id).getContext("2d"),{
+    type:"line",
+    data:{
+      labels,
+      datasets:[{
+        label, data: labels.map(_=>randomData()),
+        borderColor: color1,
+        backgroundColor: color2,
+        fill:true,
+        tension:0.35
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      scales:{ x:{ticks:{color:'#9ca3af'}}, y:{ticks:{color:'#9ca3af'}} },
+      plugins:{ legend:{labels:{color:'#e5e7eb'}} }
+    }
+  });
+}
+
+createLineChart("cpuChart","CPU Usage (%)","#00d4ff","rgba(0,212,255,0.25)");
+createLineChart("networkChart","Network Activity (MB/s)","#7c3aed","rgba(124,58,237,0.25)");
+createLineChart("sessionChart","Active Sessions","#22d3ee","rgba(34,211,238,0.25)");
+</script>
+
 {% endblock %}
